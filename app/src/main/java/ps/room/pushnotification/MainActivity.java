@@ -4,9 +4,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.installations.FirebaseInstallations;
+import com.google.firebase.installations.InstallationTokenResult;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -17,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static String CHANNEL_ID = "notification id";
     private static String CHANNEL_NAME = "notification name";
     private static String CHANNEL_DESCRIPTION = "notification description";
+    private TextView fcmToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,13 +31,20 @@ public class MainActivity extends AppCompatActivity {
 
         notificationChannel();
 
-        Button notifyBtn = findViewById(R.id.notify_btn);
-        notifyBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                displayNotification();
-            }
-        });
+        fcmToken = findViewById(R.id.fcm_token);
+
+        FirebaseInstallations.getInstance().getToken(true)
+                .addOnCompleteListener(new OnCompleteListener<InstallationTokenResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstallationTokenResult> task) {
+                        if (task.isSuccessful()) {
+                            fcmToken.setText(task.getResult().getToken());
+                        } else {
+                            fcmToken.setText(task.getException().getMessage());
+                        }
+                    }
+                });
+
     }
 
     private void displayNotification() {
@@ -40,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
                 .setContentTitle("Push Notification")
                 .setContentText("Notification on the set. Building up things slowly")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        NotificationManagerCompat notificationManagerCompat =  NotificationManagerCompat.from(this);
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
         notificationManagerCompat.notify(NOTIFICATION_ID, notification.build());
     }
 
